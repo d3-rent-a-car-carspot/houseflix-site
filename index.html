@@ -1,0 +1,205 @@
+<title>Houseflix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a streaming-style catalogue — top bar, one billboard property, then horizontal rows of property cards; a card opens a detail sheet with before/after. Deliberately single dark theme, like the red-on-black logo. */
+:root{
+  --night:#0B0B0C; --stage:#141416; --card:#1C1C1F; --line:#2A2A2E;
+  --text:#F2F2F0; --dim:#A7A7AC; --red:#E50914; --red-deep:#B20710;
+  --f-display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--night);color:var(--text)}
+body{margin:0;font:16px/1.55 var(--f-body)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+
+/* Top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:28px;padding:14px 4vw;background:linear-gradient(var(--night),rgb(11 11 12 / .85) 70%,transparent)}
+.logo{font:400 34px/1 var(--f-display);color:var(--red);letter-spacing:.04em;text-decoration:none}
+.bar nav{display:flex;gap:20px;flex-wrap:wrap}
+.bar nav a{text-decoration:none;color:var(--dim);font-size:14px;font-weight:500}
+.bar nav a:hover{color:var(--text)}
+
+/* Billboard */
+.bill{position:relative;min-height:min(78vh,720px);display:grid;align-items:end;padding:0 4vw 8vh;overflow:hidden}
+.bill img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%}
+.bill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgb(11 11 12 / .92) 0%,rgb(11 11 12 / .55) 45%,transparent 75%),linear-gradient(0deg,var(--night) 0%,transparent 35%)}
+.bill .copy{position:relative;z-index:1;max-width:560px}
+.tag{display:inline-flex;align-items:center;gap:8px;font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.tag b{color:var(--red);font-weight:500}
+.bill h1{font:400 clamp(56px,9vw,112px)/.9 var(--f-display);letter-spacing:.01em;margin:12px 0 14px}
+.bill p{margin:0 0 22px;color:#d6d6d3;font-size:17px;max-width:46ch}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border-radius:4px;border:0;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none}
+.btn.play{background:var(--text);color:var(--night)}
+.btn.more{background:rgb(109 109 110 / .7);color:var(--text)}
+.btn:hover{filter:brightness(1.12)}
+
+/* Rows */
+main{position:relative;z-index:1;margin-top:-4vh;padding-bottom:40px}
+.row{padding:14px 0 22px}
+.row h2{font:600 20px/1.2 var(--f-body);margin:0 4vw 10px;display:flex;align-items:baseline;gap:12px}
+.row h2 span{font:400 12px var(--f-mono);color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+.track{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 4vw 14px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.c{flex:0 0 clamp(230px,24vw,320px);scroll-snap-align:start;background:var(--card);border:0;padding:0;border-radius:4px;overflow:hidden;cursor:pointer;text-align:left;transition:transform .25s}
+.c:hover{transform:scale(1.04)}
+.c .th{position:relative;aspect-ratio:16/9;background:var(--stage)}
+.c .th img{width:100%;height:100%;object-fit:cover;display:block}
+.c .badge{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font:500 10px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;padding:3px 6px;border-radius:2px}
+.c .txt{padding:10px 12px 12px}
+.c strong{display:block;font-weight:600;font-size:15px}
+.c small{color:var(--dim);font-size:13px}
+.c .mono{display:grid;place-items:center;height:100%;font:400 64px var(--f-display);color:var(--red);background:radial-gradient(circle at 30% 20%,#2a1214,var(--stage) 70%)}
+
+/* About + contact */
+.about{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px;padding:48px 4vw;border-top:1px solid var(--line)}
+.about h3{font:400 30px/1 var(--f-display);letter-spacing:.03em;margin:0 0 8px;color:var(--text)}
+.about p{margin:0;color:var(--dim);max-width:40ch}
+.about .n{font:400 56px/1 var(--f-display);color:var(--red)}
+.contact{padding:40px 4vw 64px;border-top:1px solid var(--line);display:grid;gap:10px}
+.contact h2{font:400 44px/1 var(--f-display);margin:0}
+.contact p{margin:0;color:var(--dim);max-width:60ch}
+footer{padding:20px 4vw 40px;color:#6f6f74;font-size:13px;border-top:1px solid var(--line)}
+
+/* Detail sheet */
+.sheet{position:fixed;inset:0;z-index:10;background:rgb(0 0 0 / .75);overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 4vh) 16px calc(env(safe-area-inset-bottom,0px) + 4vh)}
+.panel{max-width:920px;margin:0 auto;background:var(--stage);border-radius:8px;overflow:hidden;position:relative}
+.close{position:absolute;top:12px;right:12px;z-index:3;width:40px;height:40px;border-radius:50%;border:0;background:rgb(20 20 22 / .85);cursor:pointer;font-size:18px}
+.ba{position:relative;aspect-ratio:16/10;max-width:100%;background:#000;user-select:none;touch-action:pan-y}
+.ba img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ba .after{clip-path:inset(0 0 0 var(--cut,50%))}
+.ba .line{position:absolute;top:0;bottom:0;left:var(--cut,50%);width:2px;background:#fff;pointer-events:none}
+.ba .knob{position:absolute;top:50%;left:var(--cut,50%);width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center;font:600 15px var(--f-mono);pointer-events:none}
+.ba .lab{position:absolute;bottom:12px;font:500 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;background:rgb(0 0 0 / .65);padding:4px 8px;border-radius:2px}
+.ba .lab.l{left:12px}.ba .lab.r{right:12px;background:var(--red)}
+.ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.hero1{aspect-ratio:16/9;width:100%;object-fit:cover;display:block}
+.info{padding:22px 26px 28px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:28px}
+.info h2{font:400 46px/1 var(--f-display);margin:0 0 8px}
+.info p{margin:0 0 10px;color:#d4d4d1}
+.meta{font:500 12px var(--f-mono);color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+.meta b{color:var(--red);font-weight:500}
+.facts{margin:0;display:grid;gap:8px;font-size:14px}
+.facts div{display:grid;grid-template-columns:7em 1fr;gap:10px}
+.facts dt{color:var(--dim)}
+.facts dd{margin:0;min-width:0}
+.eps{padding:0 26px 28px}
+.eps h3{font:600 18px var(--f-body);margin:6px 0 12px;display:flex;gap:10px;align-items:baseline}
+.eps h3 span{font:400 12px var(--f-mono);color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:20px}
+.grid img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:3px;background:var(--card)}
+@media (max-width:700px){
+  .bar{gap:14px}.bar nav{gap:12px}
+  .info{grid-template-columns:1fr}
+  .bill{min-height:72vh}
+}
+@media (prefers-reduced-motion:reduce){.c{transition:none}.c:hover{transform:none}}
+[hidden]{display:none!important}
+</style>
+
+<header class="bar">
+  <a class="logo" href="#topo" aria-label="Houseflix, início">HOUSEFLIX</a>
+  <nav aria-label="Secções"><a href="#transformacoes">Antes e depois</a><a href="#obra">Em obra</a><a href="#brasil">Brasil</a><a href="#contacto">Contacto</a></nav>
+</header>
+
+<section class="bill" id="topo">
+  <img src="img/algarve_depois_06.jpg" alt="Moradia de Montechoro, Algarve, depois da renovação">
+  <div class="copy">
+    <div class="tag"><b>H</b> Transformação · Algarve</div>
+    <h1>Montechoro</h1>
+    <p>Moradia com piscina em Albufeira. Fotografámos cada divisão como estava e desenhámos o que vai ser: interiores claros, luz quente e um jardim para viver lá fora.</p>
+    <div class="btns">
+      <button class="btn play" data-open="algarve">▶ Ver antes e depois</button>
+      <a class="btn more" href="#transformacoes">Todos os imóveis</a>
+    </div>
+  </div>
+</section>
+
+<main id="rows"></main>
+
+<section class="about" aria-label="Sobre a Houseflix">
+  <div><div class="n">12</div><h3>Imóveis</h3><p>Oito em Portugal e quatro em Goiânia, no Brasil.</p></div>
+  <div><div class="n">2</div><h3>Países</h3><p>De Sesimbra ao Algarve, de Odivelas ao Ribatejo, e Goiânia.</p></div>
+  <div><h3>O que fazemos</h3><p>Compramos casas com potencial, recuperamos com projeto de arquitetura e mostramos cada passo: antes, em obra e depois.</p></div>
+</section>
+
+<section class="contact" id="contacto">
+  <h2>Fale connosco</h2>
+  <p>Para arrendar, comprar ou investir num dos nossos imóveis.</p>
+  <p><a href="mailto:geral@houseflix.pt" style="color:inherit;font-size:22px">geral@houseflix.pt</a></p>
+</section>
+
+<footer>Houseflix · houseflix.pt · As imagens do «depois» são projetos e imagens criadas digitalmente; as dos empreendimentos no Brasil são dos respetivos promotores.</footer>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sh-title">
+  <div class="panel" id="panel"></div>
+</div>
+
+<script>
+const IMG={"sesimbra_antes":["sesimbra_antes_01.jpg","sesimbra_antes_02.jpg","sesimbra_antes_03.jpg","sesimbra_antes_04.jpg","sesimbra_antes_05.jpg","sesimbra_antes_06.jpg","sesimbra_antes_07.jpg","sesimbra_antes_08.jpg","sesimbra_antes_09.jpg","sesimbra_antes_10.jpg"],"sesimbra_depois":["sesimbra_depois_01.jpg","sesimbra_depois_02.jpg","sesimbra_depois_03.jpg","sesimbra_depois_04.jpg"],"algarve_antes":["algarve_antes_01.jpg","algarve_antes_02.jpg","algarve_antes_03.jpg","algarve_antes_04.jpg","algarve_antes_05.jpg","algarve_antes_06.jpg","algarve_antes_07.jpg","algarve_antes_08.jpg","algarve_antes_09.jpg","algarve_antes_10.jpg","algarve_antes_11.jpg","algarve_antes_12.jpg","algarve_antes_13.jpg","algarve_antes_14.jpg","algarve_antes_15.jpg","algarve_antes_16.jpg","algarve_antes_17.jpg","algarve_antes_18.jpg","algarve_antes_19.jpg","algarve_antes_20.jpg"],"algarve_depois":["algarve_depois_01.jpg","algarve_depois_02.jpg","algarve_depois_03.jpg","algarve_depois_04.jpg","algarve_depois_05.jpg","algarve_depois_06.jpg","algarve_depois_07.jpg","algarve_depois_08.jpg","algarve_depois_09.jpg","algarve_depois_10.jpg","algarve_depois_11.jpg","algarve_depois_12.jpg","algarve_depois_13.jpg","algarve_depois_14.jpg"],"palacete_antes":["palacete_antes_01.jpg","palacete_antes_02.jpg","palacete_antes_03.jpg","palacete_antes_04.jpg","palacete_antes_05.jpg","palacete_antes_06.jpg","palacete_antes_07.jpg","palacete_antes_08.jpg","palacete_antes_09.jpg","palacete_antes_10.jpg"],"palacete_obra":["palacete_obra_01.jpg","palacete_obra_02.jpg","palacete_obra_03.jpg","palacete_obra_04.jpg","palacete_obra_05.jpg","palacete_obra_06.jpg","palacete_obra_07.jpg","palacete_obra_08.jpg","palacete_obra_09.jpg","palacete_obra_10.jpg","palacete_obra_11.jpg","palacete_obra_12.jpg"],"palacete_depois":["palacete_depois_01.jpg","palacete_depois_02.jpg"],"estoril_antes":["estoril_antes_01.jpg","estoril_antes_02.jpg","estoril_antes_03.jpg","estoril_antes_04.jpg","estoril_antes_05.jpg","estoril_antes_06.jpg","estoril_antes_07.jpg","estoril_antes_08.jpg","estoril_antes_09.jpg","estoril_antes_10.jpg"],"estoril_depois":["estoril_depois_01.jpg","estoril_depois_02.jpg"],"quinta_antes":["quinta_antes_01.jpg","quinta_antes_02.jpg","quinta_antes_03.jpg","quinta_antes_05.jpg","quinta_antes_06.jpg","quinta_antes_07.jpg","quinta_antes_08.jpg","quinta_antes_09.jpg","quinta_antes_10.jpg","quinta_antes_11.jpg","quinta_antes_12.jpg","quinta_antes_13.jpg"],"quinta_casa":["quinta_casa_01.jpg","quinta_casa_02.jpg","quinta_casa_03.jpg","quinta_casa_04.jpg","quinta_casa_05.jpg","quinta_casa_06.jpg","quinta_casa_07.jpg","quinta_casa_08.jpg","quinta_casa_09.jpg","quinta_casa_10.jpg","quinta_casa_11.jpg","quinta_casa_12.jpg","quinta_casa_13.jpg","quinta_casa_14.jpg","quinta_casa_15.jpg","quinta_casa_16.jpg","palacete_antes_11.jpg","palacete_antes_12.jpg","palacete_antes_13.jpg"],"quinta_capela":["quinta_capela_01.jpg","quinta_capela_02.jpg","quinta_capela_03.jpg","quinta_capela_04.jpg","quinta_capela_05.jpg","quinta_capela_06.jpg"],"quinta_piscina":["quinta_piscina_01.jpg","quinta_piscina_02.jpg","quinta_piscina_03.jpg","quinta_piscina_04.jpg","quinta_piscina_05.jpg","quinta_piscina_06.jpg","quinta_piscina_07.jpg","quinta_piscina_08.jpg","quinta_piscina_09.jpg","quinta_piscina_10.jpg"],"quinta_jardins":["quinta_jardins_01.jpg","quinta_jardins_02.jpg","quinta_jardins_03.jpg","quinta_jardins_04.jpg","quinta_jardins_05.jpg","quinta_jardins_06.jpg","quinta_jardins_07.jpg","quinta_jardins_08.jpg","quinta_jardins_09.jpg"],"quinta_depois":["quinta_depois_03.jpg","quinta_depois_06.jpg","palacete_depois_03.jpg","palacete_depois_04.jpg","palacete_depois_05.jpg","palacete_depois_06.jpg"],"armazem_antes":["armazem_antes_01.jpg","armazem_antes_02.jpg","armazem_antes_03.jpg","armazem_antes_04.jpg","armazem_antes_06.jpg","armazem_antes_07.jpg","armazem_antes_08.jpg","armazem_antes_09.jpg","armazem_antes_10.jpg","armazem_antes_11.jpg","armazem_antes_12.jpg","armazem_antes_13.jpg","armazem_antes_14.jpg","armazem_antes_15.jpg","armazem_antes_16.jpg","armazem_antes_17.jpg","armazem_antes_18.jpg","armazem_antes_19.jpg"],"armazem_depois":["armazem_depois_01.jpg","armazem_depois_02.jpg","armazem_depois_03.jpg","armazem_depois_04.jpg","armazem_depois_05.jpg","armazem_depois_06.jpg","armazem_depois_07.jpg","armazem_depois_08.jpg","armazem_depois_09.jpg","armazem_depois_10.jpg","armazem_depois_11.jpg","armazem_depois_12.jpg","armazem_depois_13.jpg"],"plateau":["plateau_01.jpg","plateau_02.jpg","plateau_03.jpg","plateau_04.jpg","plateau_05.jpg","plateau_06.jpg","plateau_07.jpg","plateau_08.jpg","plateau_09.jpg"],"gaudi":["gaudi_01.jpg","gaudi_02.jpg","gaudi_03.jpg","gaudi_04.jpg","gaudi_06.jpg","gaudi_07.jpg","gaudi_08.jpg","gaudi_11.jpg","gaudi_12.jpg"],"cityway":["cityway_01.jpg","cityway_02.jpg","cityway_03.jpg","cityway_04.jpg","cityway_05.jpg","cityway_06.jpg","cityway_07.jpg","cityway_08.jpg","cityway_09.jpg"],"bside":["bside_01.jpg","bside_02.jpg","bside_03.jpg","bside_04.jpg","bside_05.jpg","bside_06.jpg","bside_07.jpg","bside_08.jpg"],"marca":["marca_05.jpg"],"par_sesimbra":["par_sesimbra_01.jpg","par_sesimbra_02.jpg"],"par_algarve":["par_algarve_01.jpg","par_algarve_02.jpg"],"par_palacete":["par_palacete_01.jpg","par_palacete_02.jpg"],"par_armazem":["par_armazem_01.jpg","par_armazem_02.jpg"]};
+const I=k=>(IMG[k]||[]).map(f=>"img/"+f);
+const P={
+ sesimbra:{name:"Sesimbra",sub:"T2 Harbour View",state:"Pronto",where:"Sesimbra",pair:"par_sesimbra",thumb:I("sesimbra_depois")[1],
+  text:"Apartamento T2 num prédio novo sobre a baía de Sesimbra, com terraço e vista de mar. Acompanhámos a obra de maio de 2025 a maio de 2026.",
+  facts:[["Tipologia","T2 com terraço"],["Vista","Mar e baía"],["Obra","2025–2026"]],eps:[["Em obra",I("sesimbra_antes")],["Projeto",I("sesimbra_depois")]]},
+ algarve:{name:"Montechoro",sub:"Albufeira, Algarve",state:"Transformação",where:"Algarve",pair:"par_algarve",thumb:I("algarve_depois")[5],
+  text:"Moradia com piscina, jardim, alpendre com churrasqueira e garagem. Cada divisão foi fotografada e redesenhada.",
+  facts:[["Tipologia","Moradia com piscina"],["Exterior","Jardim, alpendre, garagem"],["Projeto","Setembro de 2026"]],eps:[["Como está",I("algarve_antes")],["Como vai ficar",I("algarve_depois")]]},
+ palacete:{name:"Palácio dos Trocatos",sub:"Odivelas",state:"Em obra",where:"Odivelas",pair:"par_palacete",thumb:I("palacete_depois")[0],
+  text:"Palacete de época recuperado com projeto de arquitetura e interiores. Nas traseiras nascem 13 lofts de luxo com piscina e estacionamento.",
+  facts:[["Tipologia","Palacete de época"],["Projeto","Arquitetura e interiores"],["Obra","Em curso"]],eps:[["Antes",I("palacete_antes")],["Em obra",I("palacete_obra")],["Projeto",I("palacete_depois")]]},
+ estoril:{name:"Moradia Estoril",sub:"Cascais",state:"Em obra",where:"Estoril",thumb:I("estoril_depois")[0],
+  text:"Moradia contemporânea de dois pisos, com piscina e terraços. Projeto de arquitetura em curso.",
+  facts:[["Tipologia","Moradia contemporânea"],["Exterior","Piscina e jardim"],["Fase","Projeto e obra"]],eps:[["Obra",I("estoril_antes")],["Projeto",I("estoril_depois")]]},
+ quinta:{name:"Quinta da Capela",sub:"Ribatejo",state:"Quinta",where:"Ribatejo",thumb:I("quinta_piscina")[0],
+  text:"Quinta com casa principal, capela, piscina com casa de apoio, campo de jogos e jardins.",
+  facts:[["Tipologia","Quinta"],["Inclui","Capela, piscina, campo de jogos"],["Imagens","Junho de 2026"]],eps:[["Casa principal",I("quinta_casa")],["Capela",I("quinta_capela")],["Piscina",I("quinta_piscina")],["Jardins",I("quinta_jardins")],["Proposta",I("quinta_depois")]]},
+ armazem:{name:"Armazém CarSpot",sub:"Odivelas",state:"Transformação",where:"Odivelas",pair:"par_armazem",thumb:I("armazem_depois")[0],
+  text:"Armazém com stand, oficina e cabina de pintura, ocupado pela CarSpot. Redesenhado para uma oficina e um stand de nova geração.",
+  facts:[["Tipologia","Armazém"],["Uso","Stand e oficina"],["Projeto","2026"]],eps:[["Hoje",I("armazem_antes")],["Projeto",I("armazem_depois")]]},
+ patameiras:{name:"Prédio das Patameiras",sub:"Odivelas",state:"Arrendado",where:"Odivelas",mono:"P",
+  text:"Prédio com três frações e dois lugares de garagem, todo arrendado.",facts:[["Tipologia","Prédio, 3 frações"],["Garagem","2 lugares"],["Estado","Arrendado"]],eps:[]},
+ t1:{name:"T1 junto ao Metro",sub:"Odivelas",state:"Arrendado",where:"Odivelas",mono:"T1",
+  text:"Apartamento T1 com garagem e arrecadação, a poucos minutos do metro de Odivelas.",facts:[["Tipologia","T1"],["Inclui","Garagem e arrecadação"],["Estado","Arrendado"]],eps:[]},
+ plateau:{name:"Moradia Plateau D’Or",sub:"Goiânia",state:"Brasil",where:"Goiânia",thumb:I("plateau")[0],
+  text:"Casa térrea de 330 m² em terreno de 660 m², num condomínio fechado, com piscina e energia solar.",facts:[["Área","330 m²"],["Terreno","660 m²"],["Inclui","Piscina, fotovoltaico"]],eps:[["A casa",I("plateau")]]},
+ gaudi:{name:"Gaudí",sub:"Goiânia",state:"Em construção",where:"Goiânia",thumb:I("gaudi")[0],
+  text:"Apartamento num edifício de autor da Sousa Andrade, com entrega prevista para 2028.",facts:[["Promotor","Sousa Andrade"],["Entrega","2028"],["Tipo","Apartamento"]],eps:[["O empreendimento",I("gaudi")]]},
+ cityway:{name:"City Way",sub:"Goiânia",state:"Em planta",where:"Goiânia",thumb:I("cityway")[0],
+  text:"Apartamento com piscina privativa, junto ao Parque Vaca Brava.",facts:[["Promotor","City"],["Destaque","Piscina no apartamento"],["Zona","Vaca Brava"]],eps:[["O empreendimento",I("cityway")]]},
+ bside:{name:"B.Side",sub:"Goiânia",state:"Em planta",where:"Goiânia",thumb:I("bside")[0],
+  text:"Apartamento de um quarto com lavabo, varanda e lugar de garagem, no Setor Marista.",facts:[["Promotor","City"],["Tipologia","1 quarto"],["Zona","Setor Marista"]],eps:[["O empreendimento",I("bside")]]},
+};
+const ROWS=[
+ ["transformacoes","Antes e depois","arraste para comparar",["algarve","palacete","armazem","sesimbra"]],
+ ["obra","Em obra e em projeto","acompanhe cada fase",["palacete","estoril","quinta"]],
+ ["arrendamento","Arrendados","rendimento",["patameiras","t1","sesimbra"]],
+ ["brasil","Brasil · Goiânia","4 imóveis",["plateau","gaudi","cityway","bside"]],
+];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const card=id=>{const p=P[id];return `<button class="c" data-open="${id}" aria-label="${esc(p.name)}">
+  <div class="th">${p.thumb?`<img loading="lazy" src="${p.thumb}" alt="">`:`<div class="mono">${p.mono}</div>`}<span class="badge">${esc(p.state)}</span></div>
+  <div class="txt"><strong>${esc(p.name)}</strong><small>${esc(p.sub)}</small></div></button>`};
+document.getElementById("rows").innerHTML=ROWS.map(([id,t,s,ids])=>`<section class="row" id="${id}"><h2>${t} <span>${s}</span></h2><div class="track">${ids.map(card).join("")}</div></section>`).join("");
+
+const sheet=document.getElementById("sheet"),panel=document.getElementById("panel");
+function open(id){const p=P[id];
+  const top=p.pair?`<div class="ba"><img src="${I(p.pair)[0]}" alt="Antes"><img class="after" src="${I(p.pair)[1]}" alt="Depois"><div class="line"></div><div class="knob">↔</div><span class="lab l">Antes</span><span class="lab r">Depois</span><input id="ba-${id}" type="range" min="0" max="100" value="50" aria-label="Comparar antes e depois"></div>`
+    :(p.thumb?`<img class="hero1" src="${p.thumb}" alt="">`:`<div class="ba" style="aspect-ratio:21/9"><div class="mono" style="display:grid;place-items:center;height:100%;font:400 120px var(--f-display);color:var(--red)">${p.mono}</div></div>`);
+  panel.innerHTML=`<button class="close" id="x" aria-label="Fechar">✕</button>${top}
+   <div class="info"><div><div class="meta"><b>${esc(p.state)}</b> · ${esc(p.where)}</div><h2 id="sh-title">${esc(p.name)}</h2><p>${esc(p.text)}</p></div>
+   <dl class="facts">${p.facts.map(([a,b])=>`<div><dt>${a}</dt><dd>${esc(b)}</dd></div>`).join("")}</dl></div>
+   <div class="eps">${p.eps.map(([t,l])=>`<h3>${t} <span>${l.length} imagens</span></h3><div class="grid">${l.map(s=>`<img loading="lazy" src="${s}" alt="">`).join("")}</div>`).join("")||`<p class="meta">Fotografias em breve</p>`}</div>`;
+  sheet.hidden=false; document.body.style.overflow="hidden";
+  const b=panel.querySelector(".ba input"); if(b){const box=b.parentElement; const set=()=>box.style.setProperty("--cut",b.value+"%"); b.oninput=set; set();}
+  document.getElementById("x").onclick=close; document.getElementById("x").focus();
+}
+function close(){sheet.hidden=true;document.body.style.overflow="";}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-open]"); if(t){open(t.dataset.open);} else if(e.target===sheet) close();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!sheet.hidden) close();});
+</script>
